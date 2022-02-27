@@ -1,6 +1,6 @@
 # forum-app
 
-A forum application that is supposed to be a simple throwback to old school forums, like PHPBB. It's setup like a monorepo: [forum-app/client] (frontend) and [forum-app/server] (backend).
+A forum application that is supposed to be a simple throwback to old school forums, like PHPBB. It's setup like a monorepo: [forum-app/client](https://github.com/moratelli/forum-app/tree/master/client) (frontend) and [forum-app/server](https://github.com/moratelli/forum-app/tree/master/server) (backend).
 
 In this forum app, users can register an account, edit their user profile, post and reply threads, and browse the forums. 
 
