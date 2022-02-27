@@ -2,6 +2,8 @@ import { IResolvers } from "apollo-server-express";
 import { QueryArrayResult } from "../repo/QueryArrayResult";
 import { QueryOneResult } from "../repo/QueryOneResult";
 import { Thread } from "../repo/Thread";
+import { ThreadCategory } from "../repo/ThreadCategory";
+import { getAllCategories } from "../repo/ThreadCategoryRepo";
 import { ThreadItem } from "../repo/ThreadItem";
 import { updateThreadItemPoint } from "../repo/ThreadItemPointRepo";
 import { createThreadItem, getThreadItemsByThreadId } from "../repo/ThreadItemRepo";
@@ -129,6 +131,25 @@ const resolvers: IResolvers = {
         throw err;
       }
     },
+    getAllCategories: async (
+      obj: any,
+      args: null,
+      ctx: GqlContext,
+      info: any
+    ): Promise<Array<ThreadCategory> | EntityResult> => {
+      let categories: QueryArrayResult<ThreadCategory>;
+      try {
+        categories = await getAllCategories();
+        if (categories.entities) {
+          return categories.entities;
+        }
+        return {
+          messages: categories.messages ? categories.messages : [STANDARD_ERROR],
+        };
+      } catch (ex) {
+        throw ex;
+      }
+    },
     me: async (obj: any, args: null, ctx: GqlContext, info: any): Promise<User | EntityResult> => {
       let user: UserResult;
       console.log(ctx.req.session);
@@ -138,6 +159,7 @@ const resolvers: IResolvers = {
             messages: ["User not logged in"],
           };
         }
+
         user = await me(ctx.req.session.userId);
         if (user && user.user) {
           return user.user;
