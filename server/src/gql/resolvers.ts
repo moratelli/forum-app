@@ -1,4 +1,6 @@
 import { IResolvers } from "apollo-server-express";
+import CategoryThread from "../repo/CategoryThread";
+import { getTopCategoryThread } from "../repo/CategoryThreadRepo";
 import { QueryArrayResult } from "../repo/QueryArrayResult";
 import { QueryOneResult } from "../repo/QueryOneResult";
 import { Thread } from "../repo/Thread";
@@ -8,7 +10,7 @@ import { ThreadItem } from "../repo/ThreadItem";
 import { updateThreadItemPoint } from "../repo/ThreadItemPointRepo";
 import { createThreadItem, getThreadItemsByThreadId } from "../repo/ThreadItemRepo";
 import { updateThreadPoint } from "../repo/ThreadPointRepo";
-import { createThread, getThreadById, getThreadsByCategoryId } from "../repo/ThreadRepo";
+import { createThread, getThreadById, getThreadsByCategoryId, getThreadsLatest } from "../repo/ThreadRepo";
 import { User } from "../repo/User";
 import { login, logout, me, register, UserResult } from "../repo/UserRepo";
 import { GqlContext } from "./GqlContext";
@@ -110,6 +112,27 @@ const resolvers: IResolvers = {
         throw err;
       }
     },
+    getThreadsLatest: async (
+      obj: any,
+      args: null,
+      ctx: GqlContext,
+      info: any
+    ): Promise<{ threads: Array<Thread> } | EntityResult> => {
+      let threads: QueryArrayResult<Thread>;
+      try {
+        threads = await getThreadsLatest();
+        if (threads.entities) {
+          return {
+            threads: threads.entities,
+          };
+        }
+        return {
+          messages: threads.messages ? threads.messages : [STANDARD_ERROR],
+        };
+      } catch (err) {
+        throw err;
+      }
+    },
     getThreadItemByThreadId: async (
       obj: any,
       args: { threadId: string },
@@ -146,13 +169,13 @@ const resolvers: IResolvers = {
         return {
           messages: categories.messages ? categories.messages : [STANDARD_ERROR],
         };
-      } catch (ex) {
-        throw ex;
+      } catch (err) {
+        throw err;
       }
     },
     me: async (obj: any, args: null, ctx: GqlContext, info: any): Promise<User | EntityResult> => {
       let user: UserResult;
-      console.log(ctx.req.session);
+
       try {
         if (!ctx.req.session?.userId) {
           return {
@@ -168,6 +191,14 @@ const resolvers: IResolvers = {
           messages: user.messages ? user.messages : [STANDARD_ERROR],
         };
       } catch (err) {
+        throw err;
+      }
+    },
+    getTopCategoryThread: async (obj: any, args: null, ctx: GqlContext, info: any): Promise<Array<CategoryThread>> => {
+      try {
+        return await getTopCategoryThread();
+      } catch (err) {
+        console.log(err.message);
         throw err;
       }
     },
