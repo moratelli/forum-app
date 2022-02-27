@@ -1,10 +1,4 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  OneToMany,
-} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "typeorm";
 import { Length } from "class-validator";
 import { User } from "./User";
 import { ThreadItem } from "./ThreadItem";
@@ -19,6 +13,9 @@ export class Thread extends Auditable {
 
   @Column("int", { name: "Views", default: 0, nullable: false })
   views: number;
+
+  @Column("int", { name: "Points", default: 0, nullable: false })
+  points: number;
 
   @Column("boolean", { name: "IsDisabled", default: false, nullable: false })
   isDisabled: boolean;

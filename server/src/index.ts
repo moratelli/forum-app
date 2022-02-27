@@ -15,7 +15,7 @@ console.log(process.env.NODE_ENV);
 require("dotenv").config();
 
 declare module "express-session" {
-  export interface Session {
+  export interface SessionData {
     userId: string | undefined | null;
     loadedCount: number;
   }
@@ -62,7 +62,7 @@ const main = async () => {
       console.log("UserID is set!");
       req.session!.loadedCount = 0;
     } else {
-      req.session!.loadedCount = req.session!.loadedCount + 1;
+      req.session!.loadedCount = Number(req.session!.loadedCount) + 1;
     }
 
     res.send(`userId: ${req.session!.userId}, loadedCount: ${req.session!.loadedCount}`);
