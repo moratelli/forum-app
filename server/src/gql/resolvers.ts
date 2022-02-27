@@ -7,6 +7,8 @@ import { updateThreadItemPoint } from "../repo/ThreadItemPointRepo";
 import { createThreadItem, getThreadItemsByThreadId } from "../repo/ThreadItemRepo";
 import { updateThreadPoint } from "../repo/ThreadPointRepo";
 import { createThread, getThreadById, getThreadsByCategoryId } from "../repo/ThreadRepo";
+import { User } from "../repo/User";
+import { login, logout, me, register, UserResult } from "../repo/UserRepo";
 import { GqlContext } from "./GqlContext";
 
 declare module "express-session" {
@@ -23,6 +25,14 @@ interface EntityResult {
 const STANDARD_ERROR = "An error has occurred";
 
 const resolvers: IResolvers = {
+  UserResult: {
+    __resolveType(obj: any, context: GqlContext, info: any) {
+      if (obj.messages) {
+        return "EntityResult";
+      }
+      return "User";
+    },
+  },
   ThreadResult: {
     __resolveType(obj: any, context: GqlContext, info: any) {
       if (obj.messages) {
@@ -31,20 +41,20 @@ const resolvers: IResolvers = {
       return "Thread";
     },
   },
-  ThreadArrayResult: {
-    __resolveType(obj: any, context: GqlContext, info: any) {
-      if (obj.messages) {
-        return "EntityResult";
-      }
-      return "ThreadArray";
-    },
-  },
   ThreadItemResult: {
     __resolveType(obj: any, context: GqlContext, info: any) {
       if (obj.messages) {
         return "EntityResult";
       }
       return "ThreadItem";
+    },
+  },
+  ThreadArrayResult: {
+    __resolveType(obj: any, context: GqlContext, info: any) {
+      if (obj.messages) {
+        return "EntityResult";
+      }
+      return "ThreadArray";
     },
   },
   ThreadItemArrayResult: {
@@ -65,6 +75,7 @@ const resolvers: IResolvers = {
       let thread: QueryOneResult<Thread>;
       try {
         thread = await getThreadById(args.id);
+
         if (thread.entity) {
           return thread.entity;
         }
@@ -72,6 +83,7 @@ const resolvers: IResolvers = {
           messages: thread.messages ? thread.messages : [STANDARD_ERROR],
         };
       } catch (err) {
+        console.log(err.message);
         throw err;
       }
     },
@@ -112,6 +124,26 @@ const resolvers: IResolvers = {
         }
         return {
           messages: threadItems.messages ? threadItems.messages : [STANDARD_ERROR],
+        };
+      } catch (err) {
+        throw err;
+      }
+    },
+    me: async (obj: any, args: null, ctx: GqlContext, info: any): Promise<User | EntityResult> => {
+      let user: UserResult;
+      console.log(ctx.req.session);
+      try {
+        if (!ctx.req.session?.userId) {
+          return {
+            messages: ["User not logged in"],
+          };
+        }
+        user = await me(ctx.req.session.userId);
+        if (user && user.user) {
+          return user.user;
+        }
+        return {
+          messages: user.messages ? user.messages : [STANDARD_ERROR],
         };
       } catch (err) {
         throw err;
@@ -187,6 +219,60 @@ const resolvers: IResolvers = {
         throw err;
       }
     },
+    register: async (
+      obj: any,
+      args: { email: string; userName: string; password: string },
+      ctx: GqlContext,
+      info: any
+    ): Promise<string> => {
+      let user: UserResult;
+      try {
+        user = await register(args.email, args.userName, args.password);
+        if (user && user.user) {
+          return "Registration successful";
+        }
+        return user && user.messages ? user.messages[0] : STANDARD_ERROR;
+      } catch (err) {
+        throw err;
+      }
+    },
+    login: async (
+      obj: any,
+      args: { userName: string; password: string },
+      ctx: GqlContext,
+      info: any
+    ): Promise<string> => {
+      let user: UserResult;
+      try {
+        user = await login(args.userName, args.password);
+
+        if (user && user.user) {
+          ctx.req.session!.userId = user.user.id;
+
+          return `Login successful for userId ${ctx.req.session!.userId}`;
+        }
+        return user && user.messages ? user.messages[0] : STANDARD_ERROR;
+      } catch (err) {
+        console.log(err.message);
+        throw err;
+      }
+    },
+    logout: async (obj: any, args: { userName: string }, ctx: GqlContext, info: any): Promise<string> => {
+      try {
+        let result = await logout(args.userName);
+        ctx.req.session?.destroy((err: any) => {
+          if (err) {
+            console.log("destroy session failed");
+            return;
+          }
+          console.log("session destroyed", ctx.req.session?.userId);
+        });
+        return result;
+      } catch (err) {
+        throw err;
+      }
+    },
   },
 };
+
 export default resolvers;
